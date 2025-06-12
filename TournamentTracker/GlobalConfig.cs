@@ -14,6 +14,13 @@ namespace TournamentTracker
 {
     public static class GlobalConfig
     {
+        public const string PricesFile = "PricesModels.csv";
+        public const string PersonFile = "PersonModels.csv";
+        public const string TeamFile = "TeamModels.csv";
+        public const string TournamentFile = "TournamentModel.csv";
+        public const string MatchupFile = "MatchupModel.csv";
+        public const string MatchupEntryFile = "MatchupEntryModel.csv";
+
         public static class CONNECTION 
         {
             public const int SQL = 0;

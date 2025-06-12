@@ -12,8 +12,8 @@ namespace TrackerUI
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
             // Initialize db Connection
-            TournamentTracker.GlobalConfig.InitializeConnections(TournamentTracker.GlobalConfig.CONNECTION.FILE);
-            // TournamentTracker.GlobalConfig.InitializeConnections(TournamentTracker.GlobalConfig.CONNECTION.SQL);
+            // TournamentTracker.GlobalConfig.InitializeConnections(TournamentTracker.GlobalConfig.CONNECTION.FILE);
+            TournamentTracker.GlobalConfig.InitializeConnections(TournamentTracker.GlobalConfig.CONNECTION.SQL);
             Application.Run(new CreateTournamentForm());
             // Application.Run(new CreatePriceForm());
             // Application.Run(new dashboardForm());

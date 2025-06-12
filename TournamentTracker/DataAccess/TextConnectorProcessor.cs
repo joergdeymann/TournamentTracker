@@ -6,7 +6,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
+using System.Xml;
 using TournamentTracker.Models;
+using static System.Windows.Forms.LinkLabel;
 
 namespace TournamentTracker.DataAccess.TextHelpers
 {
@@ -28,93 +30,6 @@ namespace TournamentTracker.DataAccess.TextHelpers
                 return [];
             }
             return File.ReadAllLines(filename).ToList();
-
-        }
-
-        public static List<PriceModel> ConvertToPriceModels(this List<string> lines)
-        {
-            List<PriceModel> output =[];
-            foreach (string line in lines)
-            {
-                string[] cols = line.Split(',');
-                PriceModel p = new();
-                try
-                {
-                    p.Id = int.Parse(cols[0]);
-                    p.PlaceNumber = int.Parse(cols[1]);
-                    p.PlaceName = cols[2];
-                    p.PriceAmount = decimal.Parse(cols[3]);
-                    p.PricePercentage = double.Parse(cols[4]);
-                    output.Add(p);
-                }
-                catch
-                {
-                    Debug.WriteLine("Converting Price Models went wrong:" + cols[0]);
-                }
-
-            }
-
-            return output;
-
-        }
-
-        public static List<PersonModel> ConvertToPersonModels(this List<string> lines)
-        {
-            List<PersonModel> output = [];
-            foreach (string line in lines)
-            {
-                string[] cols = line.Split(',');
-                PersonModel p = new ();
-                try
-                {
-                    p.Id = int.Parse(cols[0]);
-                    p.FirstName = cols[1];
-                    p.LastName = cols[2];
-                    p.EmailAddress = cols[3];
-                    p.CellPhoneNumber = cols[4];
-                    output.Add(p);
-                }
-                catch
-                {
-                    Debug.WriteLine("Converting Person Models went wrong:" + cols[0]);
-                }
-
-            }
-
-            return output;
-
-        }
-
-        public static List<TeamModel> ConvertToTeamModels(this List<string> lines,string personFileName)
-        {
-            List<TeamModel> output = [];
-            List <PersonModel> persons = personFileName.FullFilePath().LoadFile().ConvertToPersonModels();
-            foreach (string line in lines)
-            {
-                string[] cols = line.Split(',');
-                TeamModel p = new();
-                try
-                {
-                    p.Id = int.Parse(cols[0]);
-                    p.TeamName = cols[1];
-
-                    string[] personIds = cols[2].Split('|');
-                    foreach (string personId in personIds)
-                    {
-                        p.TeamMembers.Add(persons.Where(x => x.Id == int.Parse(personId)).First());
-                    }
-
-
-                    output.Add(p);
-                }
-                catch
-                {
-                    Debug.WriteLine("Converting Team Models went wrong:" + cols[0]);
-                }
-
-            }
-
-            return output;
 
         }
 
@@ -216,6 +131,152 @@ namespace TournamentTracker.DataAccess.TextHelpers
             File.WriteAllLines(fileName.FullFilePath(), lines);
         }
 
+
+        public static void SaveRoundsToFile(this TournamentModel model, string matchupFilename, string matchupEntryFilename)
+        {
+            // Loop through Rounds
+            // Loop through Matchups
+            // Get the Mathupid and save record
+            // Loop through Matchup Entries
+
+            foreach (List<MatchupModel> round in model.Rounds)
+            {
+                foreach (MatchupModel matchup in round)
+                {
+
+                    // Load All Matchups from File
+                    // Get the highest ID and Add one
+                    // Store ID
+                    // Sa the matchup record
+                    matchup.SaveMatchupToFile(matchupFilename,matchupEntryFilename);
+                    // entryLines.Add(ConvertMacthupsToString(m.Entries));
+                }
+            }
+
+        }
+
+        private static List<MatchupEntryModel> ConvertToMatchupEntryModels(this List<string> lines)
+        {
+            // id = 0 TeamCompeting=1 Score = 2 ParentMatchup=3
+            List<MatchupEntryModel> output = [];
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                MatchupEntryModel p = new();
+                try
+                {
+                    p.Id = int.Parse(cols[0]);
+                    p.TeamCompeting = LookupTeamById(int.Parse(cols[1]));
+                    p.Score = double.Parse(cols[2]);
+                    if (int.TryParse(cols[3], out int parentId))
+                    {
+                        p.ParentMatchup = LookupMatchupById(parentId);
+                    }
+                    else
+                    {
+                        p.ParentMatchup = null!;
+                    }
+                    output.Add(p);
+                }
+                catch
+                {
+                    Debug.WriteLine("Converting Person Models went wrong:" + cols[0]);
+                }
+
+            }
+
+            return output;
+
+        }
+
+        private static List<MatchupEntryModel> ConvertStringToMatchupEntryModels(string input)
+        {
+            string[] ids = input.Split('|');
+            List<MatchupEntryModel> output = [];
+            List<MatchupEntryModel> entries = GlobalConfig.MatchupEntryFile.FullFilePath().LoadFile().ConvertToMatchupEntryModels();
+            foreach (string id in ids)
+            {
+                output.Add(entries.Where(x => x.Id == int.Parse(id)).First());
+            }
+            return output;
+
+        }
+        private static TeamModel LookupTeamById(int id)
+        { 
+            List<TeamModel> teams= GlobalConfig.TeamFile.FullFilePath().LoadFile().ConvertToTeamModels(GlobalConfig.PersonFile);
+
+            return teams.Where(x => x.Id == id).First();
+        }
+        private static MatchupModel LookupMatchupById(int id)
+        {
+            List<MatchupModel> model = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModels();
+
+            return model.Where(x => x.Id == id).First();
+        }
+        
+
+
+        public static List<MatchupModel> ConvertToMatchupModels(this List<string> lines)
+        {
+            //id=0,entries=1 (id|id|id),winner=2, matchaupRound=3
+            List<MatchupModel> output = [];
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                MatchupModel p = new();
+                try
+                {
+                    p.Id = int.Parse(cols[0]);
+
+                    p.Entries = ConvertStringToMatchupEntryModels(cols[1]);
+                    
+                    p.Winner = LookupTeamById(int.Parse(cols[2]));
+
+                    p.MatchupRound = int.Parse(cols[3]);
+                    output.Add(p);
+                }
+                catch
+                {
+                    Debug.WriteLine("Converting Matchup Models went wrong:" + cols[0]);
+                }
+
+            }
+
+            return output;
+
+        }
+
+        public static void SaveMatchupToFile(this MatchupModel matchup, string matchupFilename,string matchupEntryFilename)
+        {
+            List<MatchupModel> matchups = GlobalConfig.MatchupFile.FullFilePath().LoadFile().ConvertToMatchupModels();
+            int currentId = 1;
+            if (matchups.Count > 0)
+            {
+                currentId = matchups.OrderByDescending(x => x.Id).First().Id + 1;
+            }
+            matchup.Id = currentId;
+
+            foreach (MatchupEntryModel entry in matchup.Entries)
+            {
+                entry.SaveEntryToFile(matchupEntryFilename);
+            }
+            // Save the Matchup to the file
+        }
+
+        public static void SaveEntryToFile(this MatchupEntryModel entry, string matchupEntryFilename)
+        {
+            List<MatchupEntryModel> entries = matchupEntryFilename.FullFilePath().LoadFile().ConvertToMatchupEntryModels();
+            int currentId = 1;
+            if ( entries.Count > 0)
+            {
+                currentId = entries.OrderByDescending(x => x.Id).First().Id + 1;
+            }   
+            entry.Id = currentId;
+            // Save the entry to the file
+
+
+        }
+
         /**************************************************************************************************************
          * Converts
          **************************************************************************************************************/
@@ -228,14 +289,14 @@ namespace TournamentTracker.DataAccess.TextHelpers
             foreach (List<MatchupModel> round in rounds)
             {
 
-                output += $"{ ConvertMacthupsToString(round) }|";
+                output += $"{ ConvertMatchupsToString(round) }|";
             }
             output = output.Substring(0, output.Length - 1);
 
             return output;
         }
 
-        private static string ConvertMacthupsToString(List<MatchupModel> matchups)
+        private static string ConvertMatchupsToString(List<MatchupModel> matchups)
         {
             string output = "";
             if (matchups.Count == 0) return "";
@@ -285,6 +346,93 @@ namespace TournamentTracker.DataAccess.TextHelpers
 
             return output;
         }
+        public static List<PriceModel> ConvertToPriceModels(this List<string> lines)
+        {
+            List<PriceModel> output = [];
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                PriceModel p = new();
+                try
+                {
+                    p.Id = int.Parse(cols[0]);
+                    p.PlaceNumber = int.Parse(cols[1]);
+                    p.PlaceName = cols[2];
+                    p.PriceAmount = decimal.Parse(cols[3]);
+                    p.PricePercentage = double.Parse(cols[4]);
+                    output.Add(p);
+                }
+                catch
+                {
+                    Debug.WriteLine("Converting Price Models went wrong:" + cols[0]);
+                }
+
+            }
+
+            return output;
+
+        }
+
+        public static List<PersonModel> ConvertToPersonModels(this List<string> lines)
+        {
+            List<PersonModel> output = [];
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                PersonModel p = new();
+                try
+                {
+                    p.Id = int.Parse(cols[0]);
+                    p.FirstName = cols[1];
+                    p.LastName = cols[2];
+                    p.EmailAddress = cols[3];
+                    p.CellPhoneNumber = cols[4];
+                    output.Add(p);
+                }
+                catch
+                {
+                    Debug.WriteLine("Converting Person Models went wrong:" + cols[0]);
+                }
+
+            }
+
+            return output;
+
+        }
+
+        public static List<TeamModel> ConvertToTeamModels(this List<string> lines, string personFileName)
+        {
+            List<TeamModel> output = [];
+            List<PersonModel> persons = personFileName.FullFilePath().LoadFile().ConvertToPersonModels();
+            foreach (string line in lines)
+            {
+                string[] cols = line.Split(',');
+                TeamModel p = new();
+                try
+                {
+                    p.Id = int.Parse(cols[0]);
+                    p.TeamName = cols[1];
+
+                    string[] personIds = cols[2].Split('|');
+                    foreach (string personId in personIds)
+                    {
+                        p.TeamMembers.Add(persons.Where(x => x.Id == int.Parse(personId)).First());
+                    }
+
+
+                    output.Add(p);
+                }
+                catch
+                {
+                    Debug.WriteLine("Converting Team Models went wrong:" + cols[0]);
+                }
+
+            }
+
+            return output;
+
+        }
+
 
     }
 }

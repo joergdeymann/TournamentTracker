@@ -9,6 +9,11 @@ namespace TournamentTracker.Models
 {
     public class MatchupEntryModel
     {
+        /// <summary>
+        /// The unique ID for the Matchup Entry
+        /// </summary>
+        public int Id { get; set; } 
+
         /// <summery>
         /// Represents one Team in the Matchup
         /// </summery>
