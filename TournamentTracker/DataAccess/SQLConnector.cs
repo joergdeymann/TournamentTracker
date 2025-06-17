@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using Dapper;
 // using System.Data.SqlClient;
 using Microsoft.Data.SqlClient;
@@ -88,35 +89,12 @@ namespace TournamentTracker.DataAccess
 
         }
 
-        public List<PersonModel> GetPerson_All()
-        {
-            List<PersonModel> output;
-            using IDbConnection connection = new SqlConnection(connectionString);
-            output = connection.Query<PersonModel>("dbo.spPeople_GetAll").ToList();
-            return output;
-        }
-
-        public List<TeamModel> GetTeam_All()
-        {
-            List<TeamModel> output;
-            using IDbConnection connection = new SqlConnection(connectionString);
-            output = connection.Query<TeamModel>("dbo.spTeam_GetAll").ToList();
-
-            foreach(TeamModel t in output)
-            {
-                var p = new DynamicParameters();
-                p.Add("@TeamId", t.Id);
-
-                t.TeamMembers = connection.Query<PersonModel>("dbo.spTeamMembers_GetByTeam",p, commandType: CommandType.StoredProcedure).ToList();
-            }
-            return output;
-        }
-
         private void SaveTournament(IDbConnection connection, TournamentModel model)
         {
             DynamicParameters p = new();
-            p.Add("@TournamentName", model.Id);
+            p.Add("@TournamentName", model.TournamentName);
             p.Add("@EntryFee", model.EntryFee);
+            p.Add("@Active", 1);
             p.Add("@id", 0, dbType: DbType.Int32, direction: ParameterDirection.Output);
 
             connection.Execute("dbo.spTournament_Insert", p, commandType: CommandType.StoredProcedure);
@@ -212,5 +190,122 @@ namespace TournamentTracker.DataAccess
 
             // return model;
         }
+        /* ***********************************************************************************
+         * * Get Methods
+         * ***********************************************************************************/
+
+        public List<PersonModel> GetPerson_All()
+        {
+            List<PersonModel> output;
+            using IDbConnection connection = new SqlConnection(connectionString);
+            output = connection.Query<PersonModel>("dbo.spPeople_GetAll").ToList();
+            return output;
+        }
+
+        public List<TeamModel> GetTeam_All()
+        {
+            List<TeamModel> output;
+            using IDbConnection connection = new SqlConnection(connectionString);
+            output = connection.Query<TeamModel>("dbo.spTeam_GetAll").ToList();
+
+            foreach (TeamModel t in output)
+            {
+                var p = new DynamicParameters();
+                p.Add("@TeamId", t.Id);
+
+                t.TeamMembers = connection.Query<PersonModel>("dbo.spTeamMembers_GetByTeam", p, commandType: CommandType.StoredProcedure).ToList();
+            }
+            return output;
+        }
+
+
+        public List<TournamentModel> GetTournament_All()
+        {
+            List<TournamentModel> output;
+            using IDbConnection connection = new SqlConnection(connectionString);
+            output = connection.Query<TournamentModel>("dbo.spTournament_GetAll").ToList();
+            DynamicParameters p; 
+
+
+            foreach (TournamentModel t in output)
+            {
+                // Populate Prices
+                p = new();
+                p.Add("@TournamentId", t.Id);
+                t.Prices = connection.Query<PriceModel>("dbo.spPrices_GetByTournament", p, commandType: CommandType.StoredProcedure).ToList();
+
+                // Populate Teams
+                t.EnteredTeams = connection.Query<TeamModel>("dbo.spTeam_GetByTournament", p, commandType: CommandType.StoredProcedure).ToList();
+                foreach (TeamModel team in t.EnteredTeams)
+                {
+                    p = new();
+                    p.Add("@TeamId", team.Id);
+
+                    team.TeamMembers = connection.Query<PersonModel>("dbo.spTeamMembers_GetByTeam", p, commandType: CommandType.StoredProcedure).ToList();
+                }
+
+                // Populate Rounds
+                p = new();
+                p.Add("@TournamentId", t.Id);
+                List < MatchupModel> matchups = connection.Query<MatchupModel>("dbo.spMatchups_GetByTournament", p, commandType: CommandType.StoredProcedure).ToList();
+
+                foreach (MatchupModel m in matchups)
+                {
+                    p = new();
+                    p.Add("@MatchupId", m.Id);
+
+                    m.Entries = connection.Query<MatchupEntryModel>("dbo.spMatchupEntries_GetByMatchup", p, commandType: CommandType.StoredProcedure).ToList();
+
+                    // Offen
+                    // TODO - Populate Parent Matchup
+
+                    //Populate each entry 2 Models
+                    //Populate each entry 1 Model
+                    List<TeamModel> allTeams = GetTeam_All();
+
+                    if (m.WinnerId > 0 )
+                    {
+                        m.Winner = allTeams.Where(x => x.Id == m.WinnerId).First();
+                    }
+
+                    foreach (var me in m.Entries)
+                    {
+                        if (me.TeamCompetingId >0)
+                        {
+                            me.TeamCompeting = allTeams.Where(x => x.Id == me.TeamCompetingId).First();
+                        }
+
+                        if (me.ParentMatchupId > 0)
+                        {
+                            me.ParentMatchup = matchups.Where(x => x.Id == me.ParentMatchupId).First();
+                        }
+                    }
+
+                    // Round (List of Lists)
+
+                    List<MatchupModel> currentModel = [];
+                    int currentRound = 1;
+
+                    foreach (MatchupModel mm in matchups)
+                    {
+                        if (mm.MatchupRound > currentRound)
+                        {
+                            t.Rounds.Add(currentModel);
+                            currentModel = [];
+                            currentRound += 1;
+                        }
+
+                        currentModel.Add(mm);
+                    }
+                    t.Rounds.Add(currentModel);
+                }
+
+            }
+
+
+
+            return output;
+        }
+
     }
 }

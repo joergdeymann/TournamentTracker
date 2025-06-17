@@ -1,6 +1,6 @@
 ﻿namespace TrackerUI
 {
-    partial class dashboardForm
+    partial class DashboardForm
     {
         /// <summary>
         /// Required designer variable.
@@ -118,7 +118,7 @@
             Margin = new Padding(5);
             Name = "dashboardForm";
             Text = "Dashboard";
-            Load += dashboardForm_Load;
+            Load += DashboardForm_Load;
             ResumeLayout(false);
             PerformLayout();
         }

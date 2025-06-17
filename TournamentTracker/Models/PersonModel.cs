@@ -22,6 +22,7 @@ namespace TournamentTracker.Models
             }
 
         }
+
         public PersonModel()
         {
 

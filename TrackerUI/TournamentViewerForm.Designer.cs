@@ -48,7 +48,7 @@
             scoreTeamOneLabel = new Label();
             scoreTeamTwoLabel = new Label();
             scoreTeamTwoText = new ComboBox();
-            TeamTwoLabel = new Label();
+            teamTwoLabel = new Label();
             vsLabel = new Label();
             scoreButton = new Button();
             SuspendLayout();
@@ -100,6 +100,7 @@
             roundDropdown.Name = "roundDropdown";
             roundDropdown.Size = new Size(182, 49);
             roundDropdown.TabIndex = 3;
+            roundDropdown.SelectedIndexChanged += roundDropdown_SelectedIndexChanged;
             // 
             // unplayedOnlyCheckbox
             // 
@@ -122,6 +123,7 @@
             matchupListBox.Name = "matchupListBox";
             matchupListBox.Size = new Size(352, 248);
             matchupListBox.TabIndex = 5;
+            matchupListBox.SelectedIndexChanged += matchupListBox_SelectedIndexChanged;
             // 
             // teamOneLabel
             // 
@@ -179,18 +181,18 @@
             scoreTeamTwoText.Size = new Size(146, 49);
             scoreTeamTwoText.TabIndex = 10;
             // 
-            // TeamTwoLabel
+            // teamTwoLabel
             // 
-            TeamTwoLabel.AutoSize = true;
-            TeamTwoLabel.BackColor = Color.Transparent;
-            TeamTwoLabel.Font = new Font("Segoe UI Light", 25F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            TeamTwoLabel.ForeColor = Color.FromArgb(51, 153, 255);
-            TeamTwoLabel.Location = new Point(570, 411);
-            TeamTwoLabel.Margin = new Padding(5, 0, 5, 0);
-            TeamTwoLabel.Name = "TeamTwoLabel";
-            TeamTwoLabel.Size = new Size(300, 67);
-            TeamTwoLabel.TabIndex = 9;
-            TeamTwoLabel.Text = "<Team Two>";
+            teamTwoLabel.AutoSize = true;
+            teamTwoLabel.BackColor = Color.Transparent;
+            teamTwoLabel.Font = new Font("Segoe UI Light", 25F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            teamTwoLabel.ForeColor = Color.FromArgb(51, 153, 255);
+            teamTwoLabel.Location = new Point(570, 411);
+            teamTwoLabel.Margin = new Padding(5, 0, 5, 0);
+            teamTwoLabel.Name = "teamTwoLabel";
+            teamTwoLabel.Size = new Size(300, 67);
+            teamTwoLabel.TabIndex = 9;
+            teamTwoLabel.Text = "<Team Two>";
             // 
             // vsLabel
             // 
@@ -232,7 +234,7 @@
             Controls.Add(vsLabel);
             Controls.Add(scoreTeamTwoLabel);
             Controls.Add(scoreTeamTwoText);
-            Controls.Add(TeamTwoLabel);
+            Controls.Add(teamTwoLabel);
             Controls.Add(scoreTeamOneLabel);
             Controls.Add(scoreTeamOneText);
             Controls.Add(teamOneLabel);
@@ -264,7 +266,7 @@
         private Label scoreTeamOneLabel;
         private Label scoreTeamTwoLabel;
         private ComboBox scoreTeamTwoText;
-        private Label TeamTwoLabel;
+        private Label teamTwoLabel;
         private Label vsLabel;
         private Button scoreButton;
     }

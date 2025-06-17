@@ -14,6 +14,11 @@ namespace TournamentTracker.Models
         /// </summary>
         public int Id { get; set; } 
 
+        /// <summary>
+        /// Gets or sets the unique identifier of the team competing in the event.
+        /// </summary>
+        public int TeamCompetingId { get; set; }
+
         /// <summery>
         /// Represents one Team in the Matchup
         /// </summery>
@@ -23,6 +28,11 @@ namespace TournamentTracker.Models
         /// Represents the score for the particular team
         /// </summery>
         public double Score { get; set; }
+
+        /// <summary>
+        /// Identifies the Matchup that this team came
+        /// </summary>
+        public int ParentMatchupId { get; set; }   
 
         /// <summery>
         /// Represents the matchup that this team came
